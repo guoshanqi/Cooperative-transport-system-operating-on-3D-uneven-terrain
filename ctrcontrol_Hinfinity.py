@@ -85,23 +85,11 @@ if __name__ == "__main__":
                   [0, 1, 0],
                   [0, 0, 1],
                   ])
-        P = np.array([[0.01, 0, 0, 0, 0], 
-                    [0, 1, 0, 0, 0], 
-                    [0, 0, 1, 0, 0],
-                    [0, 0, 0, 1, 0],
-                    [0, 0, 0, 0, 1],
-                    ]) # Define P matrix
     else:
-        R = np.array([[0.1, 0, 0],
-                      [0, 0.1, 0],
-                      [0, 0, 0.3],
+        R = np.array([[1, 0, 0],
+                      [0, 1, 0],
+                      [0, 0, 1],
                         ])
-        P = np.array([[1, 0, 0, 0, 0], 
-                      [0, 1, 0, 0, 0], 
-                      [0, 0, 1, 0, 0],
-                      [0, 0, 0, 1, 0],
-                      [0, 0, 0, 0, 1],
-                    ]) # Define P matrix
     while sim.getSimulationTime() < this_sim.max_simtime:
         
         # Get the current time
@@ -153,7 +141,7 @@ if __name__ == "__main__":
             x_ref1 = np.array([sub_controller.trj1_x[index], sub_controller.trj1_y[index], sub_controller.h, sub_controller.trj1_x[index], sub_controller.trj1_y[index], sub_controller.zr])
             x_error1 = x1 - x_ref1
             err1 = [x_error1[0]*0.01, x_error1[1], x_error1[2], x_error1[3]*0.01, x_error1[4]] 
-            u1 = sub_controller.u_ref + R @ K1 @ P @ err1
+            u1 = sub_controller.u_ref + R @ K1 @ err1
             u1 = np.clip(u1, sub_controller.u_min, sub_controller.u_max)
 
             ## control the robot 2
@@ -170,7 +158,7 @@ if __name__ == "__main__":
             x_ref2 = np.array([sub_controller.trj2_x[index], sub_controller.trj2_y[index], sub_controller.h, sub_controller.trj2_x[index], sub_controller.trj2_y[index], sub_controller.zr])
             x_error2 = x2 - x_ref2
             err2 = [x_error2[0]*0.01, x_error2[1], x_error2[2], x_error2[3]*0.01, x_error2[4]]
-            u2 = sub_controller.u_ref + R @ K2 @ P @ err2
+            u2 = sub_controller.u_ref + R @ K2 @ err2
             u2 = np.clip(u2, sub_controller.u_min, sub_controller.u_max)
 
             ## control the robot 3
@@ -187,7 +175,7 @@ if __name__ == "__main__":
             x_ref3 = np.array([sub_controller.trj3_x[index], sub_controller.trj3_y[index], sub_controller.h, sub_controller.trj3_x[index], sub_controller.trj3_y[index], sub_controller.zr])
             x_error3 = x3 - x_ref3
             err3 = [x_error3[0]*0.01, x_error3[1], x_error3[2], x_error3[3]*0.01, x_error3[4]]
-            u3 = sub_controller.u_ref + R @ K3 @ P @ err3
+            u3 = sub_controller.u_ref + R @ K3 @ err3
             u3 = np.clip(u3, sub_controller.u_min, sub_controller.u_max)
 
             ## control the robot 4
@@ -204,7 +192,7 @@ if __name__ == "__main__":
             x_ref4 = np.array([sub_controller.trj4_x[index], sub_controller.trj4_y[index], sub_controller.h, sub_controller.trj4_x[index], sub_controller.trj4_y[index], sub_controller.zr])
             x_error4 = x4 - x_ref4
             err4 = [x_error4[0]*0.01, x_error4[1], x_error4[2], x_error4[3]*0.01, x_error4[4]]
-            u4 = sub_controller.u_ref + R @ K4 @ P @ err4
+            u4 = sub_controller.u_ref + R @ K4 @ err4
             u4 = np.clip(u4, sub_controller.u_min, sub_controller.u_max)    
         
             send_control()  # Send control commands to the robots
