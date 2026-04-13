@@ -17,7 +17,8 @@ This work is about cooperative transportation systems (CTSs) operating on 3D une
 ├── coppeliaSimType.py                 # define zmq functions to help autofill 
 ├── ctrcontrol_multiagent.py           # main file for simulation 
 ├── ctrcontrol_multiagent2.py          # mail file for simulation 
-├── ctrcontrol_multiagent_Lc1.py       # mail file for simulation 
+├── ctrcontrol_multiagent_Lc1.py       # mail file for simulation
+├── ctrcontrol_DMPC.py                 # Distributed MPC file for simulation
 ├── model.pth/                    # neural network model 
 ├── model2.pth/                   # neural network model2
 ├── model3.pth/                   # neural network model3 
@@ -41,6 +42,10 @@ This work is based on Coppeliasim + Python.
 4. Install necessazry packs used in python codes.
 5. open Coppeliasim and open scene "ctr_multi_7.ttt"
 6. open python and go to the workfolder and open "ctrcontrol_multiagent.py"
+7. run python file
+For circular scenario
+5. open Coppeliasim and open scene "ctr_lateral.ttt"
+6. open python and go to the workfolder and open "ctrcontrol_multiagent.py" by changing control_ref.virtual_leader_straight() to control_ref.virtual_leader function
 7. run python file
 
 4.Notes
