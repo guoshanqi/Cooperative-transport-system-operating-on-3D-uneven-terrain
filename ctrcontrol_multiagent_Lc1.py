@@ -279,7 +279,7 @@ if __name__ == "__main__":
             
             send_control()  # Send control commands to the robots
 
-            # 将数据添加到列表中
+            # Record data
             data.append([time_sim, payload_pos[0], payload_pos[1], payload_pos[2], payload_orintation[0], payload_orintation[1], payload_orintation[2], u1[0], u1[1], u1[2], u2[0], u2[1], u2[2], u3[0], u3[1], u3[2], u4[0], u4[1], u4[2]])
             
 
@@ -301,7 +301,7 @@ if __name__ == "__main__":
         sim.step()  # Step the simulation
     sim.stopSimulation(True)  # Stop the simulation
 
-    # 将数据转换为 DataFrame
+    # Save data to CSV
     current_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     filename = f'./new_data/H_data_multi_{current_time}.csv'
     df = pd.DataFrame(data, columns=['time', 'x', 'y', 'z', 'alpha', 'beta', 'gamma', 'u1', 'w1', 'h1', 'u2', 'w2', 'h2', 'u3', 'w3', 'h3', 'u4', 'w4', 'h4'])

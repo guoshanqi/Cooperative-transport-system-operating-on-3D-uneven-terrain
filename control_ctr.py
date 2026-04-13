@@ -173,7 +173,7 @@ class control:
         x_leader = x_last + v_leader * self.T_s * np.cos(x_leader_theta)
         y_leader = y_last + v_leader * self.T_s * np.sin(x_leader_theta)
 
-        return x_leader, y_leader, x_leader_theta, v_leader, 0, self.z_leader_init
+        return x_leader, y_leader, x_leader_theta, v_leader, 0, self.z_leader_init, 0
 
     #     return x_leader, y_leader, x_leader_theta, v_leader, w_leader, self.z_leader_init
 
@@ -212,7 +212,7 @@ class control:
         x_leader = x_last + v_leader * self.T_s * np.cos(x_leader_theta)
         y_leader = y_last + v_leader * self.T_s * np.sin(x_leader_theta)
 
-        return x_leader, y_leader, 0, v_leader, 0, self.z_leader_init
+        return x_leader, y_leader, 0, v_leader, 0, self.z_leader_init, 1
 
 class LQR_contro:
     def __init__(self):

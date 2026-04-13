@@ -128,7 +128,7 @@ if __name__ == "__main__":
         time_sim = sim.getSimulationTime()
 
         # calculate leader position
-        x_leader, y_leader, theta_leader, v_leader, w_leader, z_leader = control_ref.virtual_leader(time_sim, x_last, y_last, z_last, theta_last)
+        x_leader, y_leader, theta_leader, v_leader, w_leader, z_leader, scenario = control_ref.virtual_leader(time_sim, x_last, y_last, z_last, theta_last)
         
         ## read robots states
         robot1_pos, robots1_orintation = this_sim.find_position_robot(this_sim.body1_handle)
@@ -288,7 +288,7 @@ if __name__ == "__main__":
             
             send_control()  # Send control commands to the robots
 
-            # 将数据添加到列表中
+            # Record data
             data.append([time_sim, payload_pos[0], payload_pos[1], payload_pos[2], 
                          payload_orintation[0], payload_orintation[1], payload_orintation[2], 
                          u1[0], u1[1], u1[2], 
@@ -312,13 +312,17 @@ if __name__ == "__main__":
             plot_h.show()
             plot_payload.show()
             break   
-        if time_sim > 40:
-            break
+        if scenario == 1:
+            if time_sim > 70:
+                break
+        else:
+            if time_sim > 40:
+                break
         
         sim.step()  # Step the simulation
     sim.stopSimulation(True)  # Stop the simulation
 
-    # 将数据转换为 DataFrame
+    # Save data to CSV
     current_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     filename = f'./new_data/H_data_multi_sce1_{current_time}.csv'
     df = pd.DataFrame(data, columns=['time', 'x', 'y', 'z', 'alpha', 'beta', 'gamma',

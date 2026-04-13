@@ -141,7 +141,7 @@ if __name__ == "__main__":
         round = 5
 
         #get leader position
-        x_leader, y_leader, theta_leader, v_leader, w_leader, z_leader = control_ref.virtual_leader(time_sim, x_last, y_last, z_last, theta_last)
+        x_leader, y_leader, theta_leader, v_leader, w_leader, z_leader, scenario = control_ref.virtual_leader(time_sim, x_last, y_last, z_last, theta_last)
         
         if sub_controller.trj_x.all() and sub_controller.trj_y.all():
             index = sub_controller.find_target_point(robot1_pos, sub_controller.trj_x, sub_controller.trj_y)
@@ -252,8 +252,12 @@ if __name__ == "__main__":
             plot_h.show()
             plot_payload.show()
             break   
-        if time_sim > 40:
-            break
+        if scenario == 1:
+            if time_sim > 70:
+                break
+        else:
+            if time_sim > 40:
+                break
         
         sim.step()  # Step the simulation
     sim.stopSimulation(True)  # Stop the simulation

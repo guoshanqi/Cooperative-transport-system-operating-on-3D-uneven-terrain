@@ -120,7 +120,7 @@ if __name__ == "__main__":
         #get leader position 
         # here you can set up the straight or circular scenarios 
         # ------straight scenario by changing the control_ref.virtual_leader function to control_ref.virtual_leader_straight
-        x_leader, y_leader, theta_leader, v_leader, w_leader, z_leader = control_ref.virtual_leader(time_sim, x_last, y_last, z_last, theta_last)
+        x_leader, y_leader, theta_leader, v_leader, w_leader, z_leader, scenario = control_ref.virtual_leader(time_sim, x_last, y_last, z_last, theta_last)
         
         index = sub_controller.find_target_point(robot1_pos, sub_controller.trj_x, sub_controller.trj_y)
     
@@ -218,8 +218,12 @@ if __name__ == "__main__":
             plot_h.show()
             plot_payload.show()
             break   
-        if time_sim > 40:
-            break
+        if scenario == 1:
+            if time_sim > 70:
+                break
+        else:
+            if time_sim > 40:
+                break
         
         sim.step()  # Step the simulation
     sim.stopSimulation(True)  # Stop the simulation
