@@ -2,6 +2,7 @@
 =
 This work is about cooperative transportation systems (CTSs) operating on 3D uneven terrain. The automated ground vehicle (AGV) in this work consists of a four wheel-differential drive (FWD) chassis and an active end-effector (a lift mechanism). Then,  we establish a kinematic model of the AGV in a form of linear parameters varying system. Moreover, we utilize a neural network to obtain nonlinear errors between kinematic model and real physical world when CTS moving cross bumps. The error is named as coupling effect which means AGVs in the CTS could affect each other due to hard constraints. Furthermore, we design a $H\infty$ consensus control law to improve payload stability and tracking accuracy. It is common to see that other papers use consensus control law to solely improve tracking accuracy of the payload, but this work is trying to investigate how to introduce the consensus control into active end-effectors and how much the consensus control improves payload stability. Finally, we verify the methods in Coppeliasim. The simulation video can bee seen here:
 <video src="https://private-user-images.githubusercontent.com/90321869/524529128-5fe45383-2773-4557-a2c2-46ed0a26fac1.mp4" controls="controls" width="500" height="300"></video>
+<video src="https://github.com/user-attachments/assets/740046ff-1b03-4331-9c27-e8cf5187dc9f" controls="controls" width="500" height="300"></video>
 
 2.Files
 =
@@ -16,7 +17,8 @@ This work is about cooperative transportation systems (CTSs) operating on 3D une
 ├── coppeliaSimType.py                 # define zmq functions to help autofill 
 ├── ctrcontrol_multiagent.py           # main file for simulation 
 ├── ctrcontrol_multiagent2.py          # mail file for simulation 
-├── ctrcontrol_multiagent_Lc1.py       # mail file for simulation 
+├── ctrcontrol_multiagent_Lc1.py       # mail file for simulation
+├── ctrcontrol_DMPC.py                 # Distributed MPC file for simulation
 ├── model.pth/                    # neural network model 
 ├── model2.pth/                   # neural network model2
 ├── model3.pth/                   # neural network model3 
@@ -40,6 +42,10 @@ This work is based on Coppeliasim + Python.
 4. Install necessazry packs used in python codes.
 5. open Coppeliasim and open scene "ctr_multi_7.ttt"
 6. open python and go to the workfolder and open "ctrcontrol_multiagent.py"
+7. run python file
+For circular scenario
+5. open Coppeliasim and open scene "ctr_lateral.ttt"
+6. open python and go to the workfolder and open "ctrcontrol_multiagent.py" by changing control_ref.virtual_leader_straight() to control_ref.virtual_leader function
 7. run python file
 
 4.Notes
