@@ -18,6 +18,8 @@ class control:
         self.integral_h = 0.0
         self.pre_error = 0.0
         self.T_s = 0.05
+        self.z_leader_init = 0.0
+
         
         self.zr = 0.1
         
@@ -30,53 +32,6 @@ class control:
         self.u_min = [0.1, -0.3, -0.1]
         self.u_max = [0.3, 0.3, 0.1]   
 
-    # def generate_ref_trj_circle(self):
-        
-    #     x_last, y_last, z_last, theta_last = 0.25, 0.25, 0.0, 0.0  # Initialize last position of the virtual leader
-    #     time = 0.0
-    #     T_s = 1
-    #     while time <= 120:
-
-    #         if 0 <= time and time <= 10:
-    #             w_leader = 0.0
-    #         elif 10 < time and time <= 40:
-    #             w_leader = 2.8 * 0.001 * (time - 5)
-    #         elif 40 < time and time <= 80:
-    #             w_leader = -0.05
-    #         x_leader_theta = w_leader * T_s + theta_last
-    #         v_leader = 0.2
-    #         x_leader = v_leader * np.cos(x_leader_theta) * T_s + x_last
-    #         y_leader = v_leader * np.sin(x_leader_theta) * T_s + y_last
-    #         z_leader = 0.0
-
-            
-
-    #         x_last, y_last, z_last, theta_last = x_leader, y_leader, z_leader, x_leader_theta 
-
-    #         if time == 0.0:
-    #             trj = [x_leader + 0.15 * np.cos(theta_last), y_leader + 0.15 * np.sin(theta_last), 0.0, 0.0, 0.0, 0.0, 0.0]
-    #         else:
-    #             trj.extend([x_leader + 0.15 * np.cos(theta_last), y_leader + 0.15 * np.sin(theta_last), 0.0, 0.0, 0.0, 0.0, 0.0])
-
-    #         time += T_s
-        
-        
-    #     return trj
-
-    # if 0 <= time and time <= 10:
-    #             w_leader = 0.0
-    #         elif 10 < time and time <= 20:
-    #             w_leader = 0.2  * np.pi/8
-    #         elif 20 < time and time <= 40:
-    #             w_leader = -0.2  * np.pi/8
-    #         elif 40 < time and time <= 60:
-    #             w_leader = 0.2  * np.pi/8
-    #         elif 60 < time and time <= 80:
-    #             w_leader = -0.2  * np.pi/8
-    #         elif 80 < time and time <= 90:
-    #             w_leader = 0.2 * np.pi/8
-
-
     def generate_ref_trj_circle(self):
         
         x_last, y_last, z_last, theta_last = 0.25, 0.25, 0.0, 0.0  # Initialize last position of the virtual leader
@@ -87,15 +42,15 @@ class control:
             if 0 <= time and time <= 10:
                 w_leader = 0.0
             elif 10 < time and time <= 20:
-                w_leader = 0.5  * np.pi/8
+                w_leader = 0.2  * np.pi/8
             elif 20 < time and time <= 40:
-                w_leader = -0.5  * np.pi/8
+                w_leader = -0.2  * np.pi/8
             elif 40 < time and time <= 60:
-                w_leader = 0.5  * np.pi/8
+                w_leader = 0.2  * np.pi/8
             elif 60 < time and time <= 80:
-                w_leader = -0.5  * np.pi/8
+                w_leader = -0.2  * np.pi/8
             elif 80 < time and time <= 90:
-                w_leader = 0.5 * np.pi/8
+                w_leader = 0.2 * np.pi/8
 
             x_leader_theta = w_leader * T_s + theta_last
             v_leader = 0.2
@@ -154,7 +109,6 @@ class control:
         
         return trj
 
-    
     def get_robots_ref_trj(self, trj_x, trj_y):
         
         self.trj1_x = trj_x
@@ -199,7 +153,210 @@ class control:
         vh = 30 * eh + 5 * self.integral_h + 0.001 * derivative
         self.pre_error = eh
         return vh
- 
+    
+    # this is a smooth curve of sin to test cornering performance
+    def virtual_leader(self, time, x_last, y_last, z_last, theta_last):
+        v_leader = 0.2
+        if 0 <= time and time <= 10:
+                w_leader = 0.0
+        elif 10 < time and time <= 20:
+                w_leader = 0.2  * np.pi/8
+        elif 20 < time and time <= 40:
+                w_leader = -0.2  * np.pi/8
+        elif 40 < time and time <= 60:
+                w_leader = 0.2  * np.pi/8
+        elif 60 < time and time <= 80:
+                w_leader = -0.2  * np.pi/8
+        elif 80 < time and time <= 90:
+                w_leader = 0.2 * np.pi/8
+        x_leader_theta = w_leader * self.T_s + theta_last
+        x_leader = x_last + v_leader * self.T_s * np.cos(x_leader_theta)
+        y_leader = y_last + v_leader * self.T_s * np.sin(x_leader_theta)
+
+        return x_leader, y_leader, x_leader_theta, v_leader, 0, self.z_leader_init
+
+    #     return x_leader, y_leader, x_leader_theta, v_leader, w_leader, self.z_leader_init
+
+    # this is the experiment for obstacle avoidance
+    def virtual_leader_skid(self, time, x_last, y_last, z_last, theta_last):
+        v_leader = 0.2
+        flag = 1
+        if flag == 0:
+            if 0 <= time and time <= 10:
+                    theta = 0.0
+            elif 10 < time and time <= 20:
+                    theta = 45/180*np.pi
+            elif 20 < time and time <= 30:
+                    theta = -45/180*np.pi
+            elif 30 < time and time <= 40:
+                    theta = 0
+        else:
+            if 0 <= time and time <= 10:
+                    theta = 0.0
+            elif 10 < time and time <= 20:
+                    theta = 0.0
+            elif 20 < time and time <= 30:
+                    theta = 0.0
+            elif 30 < time and time <= 40:
+                    theta = 0
+        x_leader_theta = theta
+        x_leader = x_last + v_leader * self.T_s * np.cos(x_leader_theta)
+        y_leader = y_last + v_leader * self.T_s * np.sin(x_leader_theta)
+
+        return x_leader, y_leader, 0, v_leader, 0, self.z_leader_init
+    
+    def virtual_leader_straight(self, time, x_last, y_last, z_last, theta_last):
+        v_leader = 0.2
+
+        x_leader_theta = theta_last
+        x_leader = x_last + v_leader * self.T_s * np.cos(x_leader_theta)
+        y_leader = y_last + v_leader * self.T_s * np.sin(x_leader_theta)
+
+        return x_leader, y_leader, 0, v_leader, 0, self.z_leader_init
+
+class LQR_contro:
+    def __init__(self):
+        
+        self.sub = control()
+        self.T_s = self.sub.control_period
+        
+        self.A_d = np.eye(3)
+        self.Q = np.eye(3) * 10.0
+        self.R_mat = np.eye(3) * 0.1
+        
+    def calculate_matrix_K(self, theta, phi, psi, h, angula_velocity):
+        if theta > 0.0001 or theta < -0.0001:
+            M_current = np.array([
+                [np.cos(theta)*np.cos(phi), (h+0.141)*(np.cos(theta)*np.sin(psi)-np.sin(theta)*np.sin(phi)*np.cos(psi)), np.sin(theta)*np.sin(psi)+np.cos(theta)*np.sin(phi)*np.cos(psi)],
+                [np.sin(theta)*np.cos(phi), (h+0.141)*(np.sin(theta)*np.sin(psi)+np.cos(theta)*np.sin(phi)*np.cos(psi)), -np.cos(theta)*np.sin(psi)+np.sin(theta)*np.sin(phi)*np.cos(psi)],
+                [-np.sin(phi), 0.0, np.cos(phi)*np.cos(psi)]
+                ])
+        else:
+            M_current = np.array([
+                [1, 0, 0],
+                [0, 1, 0],
+                [0, 0, 1]
+                ])
+        B_d = self.T_s * M_current
+        P = solve_discrete_are(self.A_d, B_d, self.Q, self.R_mat)
+        K = np.linalg.inv(self.R_mat + B_d.T @ P @ B_d) @ (B_d.T @ P)
+        
+        M_dis = np.array([
+            [np.cos(theta)*np.cos(phi)*np.cos(psi), -np.cos(theta)*np.sin(phi)*np.sin(psi)+np.sin(theta)*np.cos(psi)],
+            [np.sin(theta)*np.cos(phi)*np.cos(psi), -np.sin(theta)*np.sin(phi)*np.sin(psi)-np.cos(theta)*np.cos(psi)],
+            [-np.sin(phi)*np.cos(psi), -np.cos(phi)*np.sin(psi)]
+        ])
+        
+        w = np.array([angula_velocity[1], angula_velocity[0]]) 
+        f_c = -np.linalg.inv(B_d) @ M_dis @ w
+        return K, f_c
+    
+    def calculate_PL(self, x, y, z, theta, phi, psi, h): 
+        
+        xl = x + (h+0.141)*(np.cos(theta)*np.sin(psi)-np.sin(theta)*np.sin(phi)*np.cos(psi))
+        yl = y + (h+0.141)*(-np.cos(theta)*np.sin(psi) + np.sin(theta)*np.sin(phi)*np.cos(psi))
+        zl = z + (h+0.141)*(np.cos(phi)*np.cos(psi))
+        
+        return xl, yl, zl
+        
+
+    def calculate_u_ff(self, u_ref, y, y_ref):
+        return 0
+    
+    def calculate_feedback_cpensation(self, K, y, y_ref):
+        
+        return 0
+    
+class MPC_control:
+    def __init__(self, horizon):
+        
+        self.sub = control()
+        self.T_s = self.sub.control_period
+
+        self.dt = self.sub.T_s
+        self.N = horizon
+        self.n_states = 5
+        self.n_inputs = 3
+        self.n_disturb = 2
+        self.L = 0.1
+
+        self.r1 = [-0.25, -0.25, 0.0]
+        self.r2 = [0.25, -0.25, 0.0]
+        self.r3 = [-0.25, 0.25, 0.0]
+        self.r4 = [0.25, 0.25, 0.0]
+        
+    def compute_MPC(self, x_current, x_target, B):
+        
+        # 2. Define CVXPY Variables
+        X = cp.Variable((self.n_states, self.N + 1))
+        U = cp.Variable((self.n_inputs, self.N))
+
+        # 3. Objective and Constraints
+        cost = 0
+        constraints = [X[:, 0] == x_current]
+
+        # Weights
+        Q = np.diag([1, 1, 1, 8, 8]) # State tracking importance
+        R = np.eye(self.n_inputs) * 0.1 # Control effort penalty
+
+        for t in range(self.N):
+            # Stage Cost
+            cost += cp.quad_form(X[:, t] - x_target, Q)
+            cost += cp.quad_form(U[:, t], R)
+
+            # Linearized Dynamics: X(k+1) = X(k) + dt * B * U(k)
+            constraints += [X[:, t+1] == X[:, t] + self.dt * (B @ U[:, t])]
+
+            # Actuator Limits (Example: max thrust/torque)
+            constraints += [U[:, t] >= self.sub.u_min]
+            constraints += [U[:, t] <= self.sub.u_max]
+
+        # 4. Solve with MOSEK
+        prob = cp.Problem(cp.Minimize(cost), constraints)
+        # MOSEK is selected explicitly here
+        prob.solve(solver=cp.MOSEK, verbose=False)
+
+        if prob.status in [cp.OPTIMAL, cp.OPTIMAL_INACCURATE]:
+            return np.array(U[:, 0].value, dtype=float).flatten()  # Return only the first optimal control action
+        else:
+            print("Solver failed to find a solution.")
+            return np.array([])
+        
+    def calculate_PL(self, x, y, z, theta, phi, psi, h): 
+        
+        xl = x + (h+0.141)*(np.cos(theta)*np.sin(psi)-np.sin(theta)*np.sin(phi)*np.cos(psi))
+        yl = y + (h+0.141)*(-np.cos(theta)*np.sin(psi) + np.sin(theta)*np.sin(phi)*np.cos(psi))
+        zl = z + (h+0.141)*(np.cos(phi)*np.cos(psi))
+        
+        return xl, yl, zl
+    
+    def calculate_PR(self, x, y, z, theta, phi, psi):
+            xr = x + self.L*np.cos(theta)*np.cos(phi)
+            yr = y + self.L*np.sin(theta)*np.cos(phi)
+            zr = z - self.L*np.sin(phi)
+            
+            return xr, yr, zr
+    
+    def caluculate_M(self, theta, phi, psi, h):
+        M_current = np.array([
+            [np.cos(theta)*np.cos(phi), (h+0.141)*(np.cos(theta)*np.sin(psi)-np.sin(theta)*np.sin(phi)*np.cos(psi)), np.sin(theta)*np.sin(psi)+np.cos(theta)*np.sin(phi)*np.cos(psi)],
+            [np.sin(theta)*np.cos(phi), (h+0.141)*(np.sin(theta)*np.sin(psi)+np.cos(theta)*np.sin(phi)*np.cos(psi)), -np.cos(theta)*np.sin(psi)+np.sin(theta)*np.sin(phi)*np.cos(psi)],
+            [-np.sin(phi), 0.0, np.cos(phi)*np.cos(psi)],
+            [np.cos(theta)*np.cos(phi), -self.L*np.sin(theta)*np.cos(phi), 0],
+            [np.sin(theta)*np.cos(phi), self.L*np.cos(theta)*np.cos(phi), 0],
+            ])
+        return M_current
+
+    def calculate_D(self, theta, phi, psi, h):
+        D_current = (h + 0.141) * np.array([
+            [np.cos(theta)*np.cos(phi)*np.cos(psi), -np.cos(theta)*np.sin(phi)*np.sin(psi)+np.sin(theta)*np.cos(psi)],
+            [np.sin(theta)*np.cos(phi)*np.cos(psi), -np.sin(theta)*np.sin(phi)*np.sin(psi)-np.cos(theta)*np.cos(psi)],
+            [-np.sin(phi)*np.cos(psi), -np.cos(phi)*np.sin(psi)],
+            [-self.L*np.cos(theta)*np.sin(phi), 0],
+            [-self.L*np.sin(theta)*np.cos(phi), 0],
+        ])
+        return D_current
+
 class H_infinity:
     def __init__(self):
         self.T_s = 0.05
@@ -237,17 +394,17 @@ class H_infinity:
     
     def compute_SF_gain(self, M_current, D_current, T_s=0.05, gamma_val=0.0, solver=cp.SCS):
 
-        n = 5   
-        m = 3   
-        p = 2   
+        n = 5   # 状态维数
+        m = 3   # 控制输入维数
+        p = 2   # 扰动维数
 
-        
+        # 离散时间系统模型：
         # x[k+1] = x[k] + T_s*(M0*u[k] + D0*w[k])
         A_d = np.eye(n)        # 3x3
         B_d = T_s * M_current         # 3x3
         E_d = T_s * D_current         # 3x2
 
-        #  z[k] = x[k] 
+        # 输出模型： z[k] = x[k] (我们直接控制末端位置误差)
         C_d = np.array([[0.2, 0, 0, 0, 0], 
                         [0, 0.2, 0, 0, 0], 
                         [0, 0, 1, 0, 0],
@@ -256,6 +413,11 @@ class H_infinity:
                         ]) # Define P matrix
         # D_d = np.zeros((n, m))
 
+        # H∞ 控制器设计（离散时间），状态反馈 u = K x, K = Y*inv(P)
+        # 目标 LMI：寻找 P (n x n, symmetric, P > 0) 和 Y (m x n) 使得
+        # LMI = [P, (A_d*P+B_d*Y)^T, P*E_d;
+        #        A_d*P+B_d*Y, P,         0;
+        #        E_d^T*P,     0,   gamma_val^2*I] > 0
         P = cp.Variable((n, n), symmetric=True)
         Y = cp.Variable((m, n))
 
@@ -276,7 +438,7 @@ class H_infinity:
             ])
             constraints = [P >> 0, LMI << 0]
             prob = cp.Problem(cp.Minimize(gamma_val), constraints) # type: ignore
-            prob.solve(solver=cp.MOSEK, verbose=False)
+            prob.solve(solver=cp.MOSEK, verbose=True)
 
         if prob.status in ['optimal', 'optimal_inaccurate']:
             P_opt = P.value
@@ -302,30 +464,31 @@ class H_infinity:
         return xr, yr, zr
     
     def compute_Hinf_gain(self, M_current, D_current, T_s=0.05):
-        # 
+        # 系统矩阵定义
         
-        n = 5    # 
-        m = 3    # 
-        p = 2    # 
+        n = 5    # 状态维度
+        m = 3    # 控制输入维度
+        p = 2    # 干扰输入维度
         
         A = np.eye(n)        # 3x3
         B = T_s * M_current         # 3x3
         Bd = T_s * D_current         # 3x2
         
         
+        #C = np.array([[1,0,0,1,1,0]])  # 输出矩阵（状态直接输出）
         C = np.array([
-            [1, 0, 0, 0, 0],
-            [0, 1, 0, 0, 0],
-            [0, 0, 1, 0, 0],
-            [0, 0, 0, 1, 0],
-            [0, 0, 0, 0, 1],
-            ])  
-        D2 = np.array([[0, 0]])  
+            [0.01, 0, 0, 0, 0],
+            [0, 0.01, 0, 0, 0],
+            [0, 0, 0.01, 0, 0],
+            [0, 0, 0, 0.01, 0],
+            [0, 0, 0, 0, 0.01],
+            ])  # 输出矩阵（状态直接输出）
+        D2 = np.array([[0, 0]])  # 干扰矩阵（无直接传递）
         
-
-        X = cp.Variable((n, n), symmetric=True)  
-        W = cp.Variable((m, n))                  
-        gamma = cp.Variable(nonneg=True)         
+        # 定义优化变量
+        X = cp.Variable((n, n), symmetric=True)  # 对称正定矩阵
+        W = cp.Variable((m, n))                  # 辅助矩阵 (Y = KX)
+        gamma = cp.Variable(nonneg=True)         # H∞性能指标
 
         M11 = -X
         M12 = A @ X + B @ W 
@@ -354,13 +517,24 @@ class H_infinity:
             [M41,  M42,  M43, M44]
         ])
         
-
+        # 定义约束条件
+        # constraints = [
+        #     X >> 1e-6*np.eye(n),                # 正定性约束
+        #     LMI << -1e-6*np.eye(17)              # LMI负定条件
+        # ]
         
         constraints = [
-            X >> 0,              
-            LMI << 0              
+            X >> 0,                # 正定性约束
+            LMI << 0              # LMI负定条件
         ]
 
+    
+        # 构建优化问题
+        problem = cp.Problem(cp.Minimize(gamma), constraints) # type: ignore
+
+        # 求解问题（推荐使用MOSEK求解器）
+
+        # problem.solve(solver=cp.SCS, max_iters = 10000, verbose=False)
         
         problem = cp.Problem(cp.Minimize(gamma), constraints) # type: ignore
         mosek_params = {
@@ -370,17 +544,18 @@ class H_infinity:
         "MSK_IPAR_INTPNT_MAX_ITERATIONS": 1000,     # 限制迭代次数
         }
 
-        problem.solve(solver=cp.MOSEK, verbose=False, mosek_params=mosek_params)  
+        problem.solve(solver=cp.MOSEK, verbose=False, mosek_params=mosek_params)  # 使用MOSEK求解器
 
-
-        if problem.status in ['optimal', 'optimal_inaccurate']:            
-            #  K = Y * X^{-1}
+        # 结果处理
+        if problem.status in ['optimal', 'optimal_inaccurate']:
+            print(f"H∞ gain: {gamma.value:.4f}")
+            
+            # 计算控制器增益矩阵 K = Y * X^{-1}
             X_opt = np.linalg.inv(X.value) # type: ignore
             K = W.value @ X_opt
             return K
         else:
-            print(f"fail! state: {problem.status}")
-
+            print(f"Fail: {problem.status}")
 
 class multi_agent:
     def __init__(self):
@@ -441,23 +616,23 @@ class multi_agent:
         return xr, yr, zr
     
     def compute_multi_gain(self, diag_bd, diag_dd, T_s=0.05):
-        # define system matrices
+        # 系统矩阵定义
         
-        n = 5    # states dimension
-        m = 3    # input dimension
-        p = 2    # disturbance dimension
+        n = 5    # 状态维度
+        m = 3    # 控制输入维度
+        p = 2    # 干扰输入维度
         
         L_m = np.array([[3, -1, -1, 0],
                        [-1, 3, -1, 0],
                        [-1, -1, 4, -1],
                        [0, 0, -1, 2]]) 
         C_d = 0.001 * np.array([
-            [1, 0, 0, 0, 0],
-            [0, 1, 0, 0, 0],
-            [0, 0, 1, 0, 0],
+            [1, 0, 2, 3, 0],
+            [0, 1, 0, 0, 1],
+            [0, 0, 1, 0, 1],
             [0, 0, 0, 1, 0],
             [0, 0, 0, 0, 1],
-            ])  # output matrix
+            ])  # 输出矩阵（状态直接输出）
         
         A_d = np.eye(n)        # 3x3
         diag_bd = T_s * diag_bd         # 3x3
@@ -465,8 +640,11 @@ class multi_agent:
                         
         I_N = np.eye(4)
         A_1 = np.kron(I_N, A_d)
+        # B_1 = np.kron(L_m, B_d)
         B_1 = diag_bd 
+        # D_1 = np.kron(L_c, E_d)
         D_1 = diag_dd
+        # D_1 = diag_dd
         C_1 = np.kron(I_N, C_d)
         
         W1 = cp.Variable((5, 5), symmetric=True)
@@ -481,7 +659,7 @@ class multi_agent:
 
         Z = cp.Variable((12, 20))
         
-        gamma = cp.Variable(nonneg=True)         # H∞ performance index
+        gamma = cp.Variable(nonneg=True)         # H∞性能指标
 
         M11 = -W
         M12 = A_1 @ W + B_1 @ Z
@@ -507,7 +685,7 @@ class multi_agent:
             [M41,  M42,  M43, M44]
         ])
         
-        # constraints
+        # 定义约束条件
         constraints = [W1 >> 0,                
                        W2 >> 0,
                        W3 >> 0,
@@ -516,27 +694,99 @@ class multi_agent:
 
     
         mosek_params = {
-        "MSK_DPAR_INTPNT_CO_TOL_REL_GAP": 1e-3,    
-        "MSK_DPAR_INTPNT_CO_TOL_PFEAS": 1e-5,      
-        "MSK_DPAR_INTPNT_CO_TOL_DFEAS": 1e-5,      
-        "MSK_IPAR_INTPNT_MAX_ITERATIONS": 10000,     
+        "MSK_DPAR_INTPNT_CO_TOL_REL_GAP": 1e-3,    # 放宽对偶间隙
+        "MSK_DPAR_INTPNT_CO_TOL_PFEAS": 1e-5,      # 放宽原始可行性
+        "MSK_DPAR_INTPNT_CO_TOL_DFEAS": 1e-5,      # 放宽对偶可行性
+        "MSK_IPAR_INTPNT_MAX_ITERATIONS": 10000,     # 限制迭代次数
         }
     
-        # build optimization problem
+        # 构造问题：目标函数设为0 (只需寻找可行解)
         prob = cp.Problem(cp.Minimize(gamma), constraints) # type: ignore
-        # use mosek
-        prob.solve(solver=cp.MOSEK, verbose=False, mosek_params=mosek_params)  # use mosek solver
-        # result processing
-        if prob.status in ['optimal', 'optimal_inaccurate']:            
-            #  K = Z * W^{-1}
+        # 使用 cp.SCS
+        prob.solve(solver=cp.MOSEK, verbose=False, mosek_params=mosek_params)  # 使用MOSEK求解器
+        # 结果处理
+        if prob.status in ['optimal', 'optimal_inaccurate']:
+            print(f"优化成功! 最小H∞增益: {gamma.value:.4f}")
+            
+            # 计算控制器增益矩阵 K = Z * W^{-1}
             W_opt = np.linalg.inv(W.value) # type: ignore
             Z_va = Z.value
             Lm_inv = np.linalg.inv(np.kron(L_m, np.eye(n)))
             K = Z_va @ W_opt @ Lm_inv
             return K
         else:
-            print(f"optimize fail! state: {prob.status}")
-         
+            print(f"优化失败! 状态: {prob.status}")
+            return np.array([])
+   
+class sliding_mode:
+    def __init__(self, spd = 0.2):
+        self.lambda_ = 1.0
+        self.eta = 0.1
+        self.T_s = 0.05
+        self.L = 0.15
+        self.offset = 0.5
+        self.x_leader_init = 0.0
+        self.y_leader_init = 0.0
+        self.z_leader_init = 0.0
+        self.theta_leader_init = 0.0
+
+        self.u_min = [0.1, -1, -0.1]
+        self.u_max = [0.3, 1, 0.1]
+
+        self.d_24 = np.sqrt(self.offset**2 + (self.offset + self.L)**2)
+        self.angle_2 = np.arctan2(-self.offset, self.offset + self.L)
+        self.angle_4 = np.arctan2(self.offset, self.offset + self.L)
+
+        self.d_13 = np.sqrt(self.offset**2 + (self.offset - self.L)**2)
+        self.angle_1 = np.arctan2(-self.offset, -(self.offset - self.L))
+        self.angle_3 = np.arctan2(self.offset, -(self.offset - self.L))
+
+
+        self.u_ref = [spd, 0.0, 0.0]
+
+        self.zr = 0.32
+        
+    def calculate_B(self, theta, phi, psi =  0, h = 0, w = 0):
+        M_current = np.array([
+            # [-np.sin(phi), 0.0, np.cos(phi)*np.cos(psi)],
+            [np.cos(theta)*np.cos(phi), -self.L*np.sin(theta)*np.cos(phi), 0],
+            [np.sin(theta)*np.cos(phi), self.L*np.cos(theta)*np.cos(phi), 0],
+            ])
+        return M_current
+
+    def calculate_D(self, theta, phi, psi, h):
+        D_current = (h + 0.141) * np.array([
+            [-np.sin(phi)*np.cos(psi), -np.cos(phi)*np.sin(psi)],
+            [-self.L*np.cos(theta)*np.sin(phi)/(h + 0.141), 0],
+            [-self.L*np.sin(theta)*np.cos(phi)/(h + 0.141), 0],
+        ])
+        return D_current
+    
+    def calculate_PL(self, x, y, z, theta, phi, psi, h): 
+        
+        xl = x + (h+0.141)*(np.sin(theta)*np.sin(psi) + np.cos(theta)*np.sin(phi)*np.cos(psi))
+        yl = y + (h+0.141)*(-np.cos(theta)*np.sin(psi) + np.sin(theta)*np.sin(phi)*np.cos(psi))
+        zl = z + (h+0.141)*(np.cos(phi)*np.cos(psi))
+        
+        return xl, yl, zl
+    
+    def calculate_PR(self, x, y, z, theta, phi, psi):
+        xr = x + self.L*np.cos(theta)*np.cos(phi)
+        yr = y + self.L*np.sin(theta)*np.cos(phi)
+        zr = z - self.L*np.sin(phi)
+        
+        return xr, yr, zr
+
+    def cal_p(self, x, y, z, theta, phi, psi, h):
+        xr = x + self.L*np.cos(theta)*np.cos(phi)
+        yr = y + self.L*np.sin(theta)*np.cos(phi)
+        zl = z + (h+0.141)*(np.cos(phi)*np.cos(psi))
+        return xr, yr, zl
+    
+    
+    
+    
+        
 
 
             

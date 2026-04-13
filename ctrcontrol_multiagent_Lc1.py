@@ -93,19 +93,19 @@ if __name__ == "__main__":
     
     # load neural network model
     model1 = MyNet()
-    model1.load_state_dict(torch.load('./model.pth'))
+    model1.load_state_dict(torch.load('model.pth'))
     model1.eval()
     
     model2 = MyNet()
-    model2.load_state_dict(torch.load('./model2.pth'))
+    model2.load_state_dict(torch.load('model2.pth'))
     model2.eval()
     
     model3 = MyNet()
-    model3.load_state_dict(torch.load('./model3.pth'))
+    model3.load_state_dict(torch.load('model3.pth'))
     model3.eval()
     
     model4 = MyNet()
-    model4.load_state_dict(torch.load('./model4.pth'))
+    model4.load_state_dict(torch.load('model4.pth'))
     model4.eval()
     # store data
     data = []
@@ -299,7 +299,7 @@ if __name__ == "__main__":
             break
         
         sim.step()  # Step the simulation
-    sim.stopSimulation()  # Stop the simulation
+    sim.stopSimulation(True)  # Stop the simulation
 
     # 将数据转换为 DataFrame
     current_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")

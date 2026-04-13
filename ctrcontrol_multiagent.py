@@ -82,8 +82,13 @@ if __name__ == "__main__":
     control_ma = control_ctr.multi_agent()  # Initialize controller
     control_ref = control_ctr.control() # Initialize reference trajectory
     sub_controller = control_ctr.control() # Initialize sub controller
-    
-    
+
+
+    x_last, y_last, z_last, theta_last = 0.25, 0.25, 0.0, 0.0  # Initialize last position of the virtual leader
+    # ref_trj_circle = control_ref.generate_ref_trj_circle()
+    # sim.createPath(ref_trj_circle, 8, len(ref_trj_circle), 1.0, 0, [0.0, 0.0, 1.0])  # Create a path for the simulation (optional)
+
+
     num_robots = 4
     plot_v = plot.Realtimeplot(num_robots, 'velocity', this_sim.max_simtime, 0, 0.5) # Initialize linear velocity plot
     plot_w = plot.Realtimeplot(num_robots, 'angular velocity', this_sim.max_simtime, -1, 1) # Initialize angular velocity plot
@@ -93,19 +98,19 @@ if __name__ == "__main__":
     
     # load neural network model
     model1 = MyNet()
-    model1.load_state_dict(torch.load('./model.pth'))
+    model1.load_state_dict(torch.load('model.pth'))
     model1.eval()
     
     model2 = MyNet()
-    model2.load_state_dict(torch.load('./model2.pth'))
+    model2.load_state_dict(torch.load('model2.pth'))
     model2.eval()
     
     model3 = MyNet()
-    model3.load_state_dict(torch.load('./model3.pth'))
+    model3.load_state_dict(torch.load('model3.pth'))
     model3.eval()
     
     model4 = MyNet()
-    model4.load_state_dict(torch.load('./model4.pth'))
+    model4.load_state_dict(torch.load('model4.pth'))
     model4.eval()
     # store data
     data = []
@@ -116,9 +121,14 @@ if __name__ == "__main__":
 
 
     while sim.getSimulationTime() < this_sim.max_simtime:
+
+        
         
         # Get the current time
         time_sim = sim.getSimulationTime()
+
+        # calculate leader position
+        x_leader, y_leader, theta_leader, v_leader, w_leader, z_leader = control_ref.virtual_leader(time_sim, x_last, y_last, z_last, theta_last)
         
         ## read robots states
         robot1_pos, robots1_orintation = this_sim.find_position_robot(this_sim.body1_handle)
@@ -157,7 +167,10 @@ if __name__ == "__main__":
             # M_c1 = np.round(M_c1, rod)
             # D_c1 = np.round(D_c1, rod)
             x1 = np.array([xl1, yl1, zl1, xr1, yr1])
-            x_ref1 = np.array([sub_controller.trj1_x[index], sub_controller.trj1_y[index], sub_controller.h, sub_controller.trj1_x[index], sub_controller.trj1_y[index]])
+            # x_ref1 = np.array([sub_controller.trj1_x[index], sub_controller.trj1_y[index], sub_controller.h, sub_controller.trj1_x[index], sub_controller.trj1_y[index]])
+            x_ref1 = np.array([x_leader - 0.25, y_leader - 0.25, sub_controller.h,
+                        x_leader - 0.25 + control_ma.L, 
+                        y_leader - 0.25])
             x_error1 = x1 - x_ref1
             
             ## control the robot 2
@@ -166,7 +179,10 @@ if __name__ == "__main__":
             # M_c2 = np.round(M_c2, rod)
             # D_c2 = np.round(D_c2, rod)
             x2 = np.array([xl2, yl2, zl2, xr2, yr2])
-            x_ref2 = np.array([sub_controller.trj2_x[index], sub_controller.trj2_y[index], sub_controller.h, sub_controller.trj2_x[index], sub_controller.trj2_y[index]])
+            # x_ref2 = np.array([sub_controller.trj2_x[index], sub_controller.trj2_y[index], sub_controller.h, sub_controller.trj2_x[index], sub_controller.trj2_y[index]])
+            x_ref2 = np.array([x_leader + 0.25, y_leader - 0.25, sub_controller.h,
+                        x_leader + 0.25 + control_ma.L, 
+                        y_leader - 0.25])
             x_error2 = x2 - x_ref2
             
             ## control the robot 3
@@ -175,7 +191,10 @@ if __name__ == "__main__":
             # M_c3 = np.round(M_c3, rod)
             # D_c3 = np.round(D_c3, rod)
             x3 = np.array([xl3, yl3, zl3, xr3, yr3])
-            x_ref3 = np.array([sub_controller.trj3_x[index], sub_controller.trj3_y[index], sub_controller.h, sub_controller.trj3_x[index], sub_controller.trj3_y[index]])
+            # x_ref3 = np.array([sub_controller.trj3_x[index], sub_controller.trj3_y[index], sub_controller.h, sub_controller.trj3_x[index], sub_controller.trj3_y[index]])
+            x_ref3 = np.array([x_leader - 0.25, y_leader + 0.25, sub_controller.h,
+                        x_leader - 0.25 + control_ma.L, 
+                        y_leader + 0.25])
             x_error3 = x3 - x_ref3
             
             ## control the robot 4
@@ -184,7 +203,10 @@ if __name__ == "__main__":
             # M_c4 = np.round(M_c4, rod)
             # D_c4 = np.round(D_c4, rod)
             x4 = np.array([xl4, yl4, zl4, xr4, yr4])
-            x_ref4 = np.array([sub_controller.trj4_x[index], sub_controller.trj4_y[index], sub_controller.h, sub_controller.trj4_x[index], sub_controller.trj4_y[index]])
+            # x_ref4 = np.array([sub_controller.trj4_x[index], sub_controller.trj4_y[index], sub_controller.h, sub_controller.trj4_x[index], sub_controller.trj4_y[index]])
+            x_ref4 = np.array([x_leader + 0.25, y_leader + 0.25, sub_controller.h,
+                        x_leader + 0.25 + control_ma.L, 
+                        y_leader + 0.25])
             x_error4 = x4 - x_ref4  
 
             M_d = la.block_diag(M_c1,M_c2,M_c3,M_c4)
@@ -216,7 +238,7 @@ if __name__ == "__main__":
                 output3 = model3(combined_tensor3)
                 output4 = model4(combined_tensor4)
             
-            kk = 0.01
+            kk = 1
             
             K = control_ma.compute_multi_gain(M_d,D_d)
             K = K  # Scale the gain matrix
@@ -267,8 +289,16 @@ if __name__ == "__main__":
             send_control()  # Send control commands to the robots
 
             # 将数据添加到列表中
-            data.append([time_sim, payload_pos[0], payload_pos[1], payload_pos[2], payload_orintation[0], payload_orintation[1], payload_orintation[2], u1[0], u1[1], u1[2], u2[0], u2[1], u2[2], u3[0], u3[1], u3[2], u4[0], u4[1], u4[2]])
+            data.append([time_sim, payload_pos[0], payload_pos[1], payload_pos[2], 
+                         payload_orintation[0], payload_orintation[1], payload_orintation[2], 
+                         u1[0], u1[1], u1[2], 
+                         u2[0], u2[1], u2[2], 
+                         u3[0], u3[1], u3[2], 
+                         u4[0], u4[1], u4[2],
+                         x_leader, y_leader, z_leader, theta_leader,])
             
+            x_last, y_last, z_last, theta_last = x_leader, y_leader, z_leader, theta_leader 
+
 
         try:
             plot_v.update(time_sim, [u1[0], u2[0], u3[0], u4[0]])
@@ -282,16 +312,21 @@ if __name__ == "__main__":
             plot_h.show()
             plot_payload.show()
             break   
-        if time_sim > 70:
+        if time_sim > 40:
             break
         
         sim.step()  # Step the simulation
-    sim.stopSimulation()  # Stop the simulation
+    sim.stopSimulation(True)  # Stop the simulation
 
-    # transform data to DataFrame
+    # 将数据转换为 DataFrame
     current_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    filename = f'./data/H_data_multi_sce1_{current_time}.csv'
-    df = pd.DataFrame(data, columns=['time', 'x', 'y', 'z', 'alpha', 'beta', 'gamma', 'u1', 'w1', 'h1', 'u2', 'w2', 'h2', 'u3', 'w3', 'h3', 'u4', 'w4', 'h4'])
+    filename = f'./new_data/H_data_multi_sce1_{current_time}.csv'
+    df = pd.DataFrame(data, columns=['time', 'x', 'y', 'z', 'alpha', 'beta', 'gamma',
+                                      'u1', 'w1', 'h1',
+                                        'u2', 'w2', 'h2',
+                                          'u3', 'w3', 'h3',
+                                            'u4', 'w4', 'h4',
+                                              'ref_x', 'ref_y', 'ref_z', 'ref_theta'])
     df.to_csv(filename, index=False)
 
 

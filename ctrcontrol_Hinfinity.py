@@ -67,7 +67,8 @@ if __name__ == "__main__":
     control_ref = control_ctr.control() # Initialize reference trajectory
     sub_controller = control_ctr.control(0.19) # Initialize sub controller
     
-    
+    x_last, y_last, z_last, theta_last = 0.25, 0.25, 0.0, 0.0  # Initialize last position of the virtual leader
+
     num_robots = 4
     plot_v = plot.Realtimeplot(num_robots, 'velocity', this_sim.max_simtime, 0, 0.5) # Initialize linear velocity plot
     plot_w = plot.Realtimeplot(num_robots, 'angular velocity', this_sim.max_simtime, -0.3, 0.3) # Initialize angular velocity plot
@@ -85,12 +86,27 @@ if __name__ == "__main__":
                   [0, 1, 0],
                   [0, 0, 1],
                   ])
+        P = np.array([[0.01, 0, 0, 0, 0], 
+                    [0, 1, 0, 0, 0], 
+                    [0, 0, 1, 0, 0],
+                    [0, 0, 0, 1, 0],
+                    [0, 0, 0, 0, 1],
+                    ]) # Define P matrix
     else:
-        R = np.array([[1, 0, 0],
-                      [0, 1, 0],
-                      [0, 0, 1],
+        R = np.array([[0.1, 0, 0],
+                      [0, 0.1, 0],
+                      [0, 0, 0.1],
                         ])
+        P = np.array([[1, 0, 0, 0, 0], 
+                      [0, 1, 0, 0, 0], 
+                      [0, 0, 1, 0, 0],
+                      [0, 0, 0, 1, 0],
+                      [0, 0, 0, 0, 1],
+                    ]) # Define P matrix
+        
     while sim.getSimulationTime() < this_sim.max_simtime:
+
+        
         
         # Get the current time
         time_sim = sim.getSimulationTime()
@@ -123,6 +139,9 @@ if __name__ == "__main__":
         payload_pos, payload_orintation = this_sim.find_position_robot(this_sim.payload_handle)
         
         round = 5
+
+        #get leader position
+        x_leader, y_leader, theta_leader, v_leader, w_leader, z_leader = control_ref.virtual_leader(time_sim, x_last, y_last, z_last, theta_last)
         
         if sub_controller.trj_x.all() and sub_controller.trj_y.all():
             index = sub_controller.find_target_point(robot1_pos, sub_controller.trj_x, sub_controller.trj_y)
@@ -137,11 +156,14 @@ if __name__ == "__main__":
             else:
                 K1   = control_h.compute_Hinf_gain(M_c1, D_c1) # 计算Hinf增益
             # K1 = np.round(K1, round)
-            x1 = np.array([xl1, yl1, zl1, xr1, yr1, zr1])
-            x_ref1 = np.array([sub_controller.trj1_x[index], sub_controller.trj1_y[index], sub_controller.h, sub_controller.trj1_x[index], sub_controller.trj1_y[index], sub_controller.zr])
+            x1 = np.array([xl1, yl1, zl1, xr1, yr1])
+            # x_ref1 = np.array([sub_controller.trj1_x[index], sub_controller.trj1_y[index], sub_controller.h, sub_controller.trj1_x[index], sub_controller.trj1_y[index], sub_controller.zr])
+            x_ref1 = np.array([x_leader - 0.25, y_leader - 0.25, sub_controller.h,
+                        x_leader - 0.25 + control_h.L, 
+                        y_leader - 0.25])
             x_error1 = x1 - x_ref1
-            err1 = [x_error1[0]*0.01, x_error1[1], x_error1[2], x_error1[3]*0.01, x_error1[4]] 
-            u1 = sub_controller.u_ref + R @ K1 @ err1
+            err1 = [x_error1[0], x_error1[1], x_error1[2], x_error1[3], x_error1[4]] 
+            u1 = sub_controller.u_ref + R @ K1 @ P @ err1
             u1 = np.clip(u1, sub_controller.u_min, sub_controller.u_max)
 
             ## control the robot 2
@@ -154,11 +176,14 @@ if __name__ == "__main__":
             else:
                 K2   = control_h.compute_Hinf_gain(M_c2, D_c2) # 计算Hinf增益
             # K2 = np.round(K2, round)
-            x2 = np.array([xl2, yl2, zl2, xr2, yr2, zr2])
-            x_ref2 = np.array([sub_controller.trj2_x[index], sub_controller.trj2_y[index], sub_controller.h, sub_controller.trj2_x[index], sub_controller.trj2_y[index], sub_controller.zr])
+            x2 = np.array([xl2, yl2, zl2, xr2, yr2])
+            # x_ref2 = np.array([sub_controller.trj2_x[index], sub_controller.trj2_y[index], sub_controller.h, sub_controller.trj2_x[index], sub_controller.trj2_y[index], sub_controller.zr])
+            x_ref2 = np.array([x_leader + 0.25, y_leader - 0.25, sub_controller.h,
+                        x_leader + 0.25 + control_h.L, 
+                        y_leader - 0.25])
             x_error2 = x2 - x_ref2
-            err2 = [x_error2[0]*0.01, x_error2[1], x_error2[2], x_error2[3]*0.01, x_error2[4]]
-            u2 = sub_controller.u_ref + R @ K2 @ err2
+            err2 = [x_error2[0], x_error2[1], x_error2[2], x_error2[3], x_error2[4]]
+            u2 = sub_controller.u_ref + R @ K2 @ P @ err2
             u2 = np.clip(u2, sub_controller.u_min, sub_controller.u_max)
 
             ## control the robot 3
@@ -171,11 +196,14 @@ if __name__ == "__main__":
             else:
                 K3   = control_h.compute_Hinf_gain(M_c3, D_c3)
             # K3 = np.round(K3, round)
-            x3 = np.array([xl3, yl3, zl3, xr3, yr3, zr3])
-            x_ref3 = np.array([sub_controller.trj3_x[index], sub_controller.trj3_y[index], sub_controller.h, sub_controller.trj3_x[index], sub_controller.trj3_y[index], sub_controller.zr])
+            x3 = np.array([xl3, yl3, zl3, xr3, yr3])
+            # x_ref3 = np.array([sub_controller.trj3_x[index], sub_controller.trj3_y[index], sub_controller.h, sub_controller.trj3_x[index], sub_controller.trj3_y[index], sub_controller.zr])
+            x_ref3 = np.array([x_leader - 0.25, y_leader + 0.25, sub_controller.h,
+                        x_leader - 0.25 + control_h.L, 
+                        y_leader + 0.25])
             x_error3 = x3 - x_ref3
-            err3 = [x_error3[0]*0.01, x_error3[1], x_error3[2], x_error3[3]*0.01, x_error3[4]]
-            u3 = sub_controller.u_ref + R @ K3 @ err3
+            err3 = [x_error3[0], x_error3[1], x_error3[2], x_error3[3], x_error3[4]]
+            u3 = sub_controller.u_ref + R @ K3 @ P @ err3
             u3 = np.clip(u3, sub_controller.u_min, sub_controller.u_max)
 
             ## control the robot 4
@@ -188,18 +216,29 @@ if __name__ == "__main__":
             else:
                 K4   = control_h.compute_Hinf_gain(M_c4, D_c4)
             # K4 = np.round(K4, round)
-            x4 = np.array([xl4, yl4, zl4, xr4, yr4, zr4])
-            x_ref4 = np.array([sub_controller.trj4_x[index], sub_controller.trj4_y[index], sub_controller.h, sub_controller.trj4_x[index], sub_controller.trj4_y[index], sub_controller.zr])
+            x4 = np.array([xl4, yl4, zl4, xr4, yr4])
+            # x_ref4 = np.array([sub_controller.trj4_x[index], sub_controller.trj4_y[index], sub_controller.h, sub_controller.trj4_x[index], sub_controller.trj4_y[index], sub_controller.zr])
+            x_ref4 = np.array([x_leader + 0.25, y_leader + 0.25, sub_controller.h,
+                        x_leader + 0.25 + control_h.L, 
+                        y_leader + 0.25])
             x_error4 = x4 - x_ref4
-            err4 = [x_error4[0]*0.01, x_error4[1], x_error4[2], x_error4[3]*0.01, x_error4[4]]
-            u4 = sub_controller.u_ref + R @ K4 @ err4
+            err4 = [x_error4[0], x_error4[1], x_error4[2], x_error4[3], x_error4[4]]
+            u4 = sub_controller.u_ref + R @ K4 @ P @ err4
             u4 = np.clip(u4, sub_controller.u_min, sub_controller.u_max)    
         
             send_control()  # Send control commands to the robots
 
             # 将数据添加到列表中
-            data.append([time_sim, payload_pos[0], payload_pos[1], payload_pos[2], payload_orintation[0], payload_orintation[1], payload_orintation[2], u1[0], u1[1], u1[2], u2[0], u2[1], u2[2], u3[0], u3[1], u3[2], u4[0], u4[1], u4[2]])
+            data.append([time_sim, payload_pos[0], payload_pos[1], payload_pos[2], 
+                         payload_orintation[0], payload_orintation[1], payload_orintation[2], 
+                         u1[0], u1[1], u1[2], 
+                         u2[0], u2[1], u2[2], 
+                         u3[0], u3[1], u3[2], 
+                         u4[0], u4[1], u4[2],
+                         x_leader, y_leader, z_leader, theta_leader,])
             
+            x_last, y_last, z_last, theta_last = x_leader, y_leader, z_leader, theta_leader 
+
 
         try:
             plot_v.update(time_sim, [u1[0], u2[0], u3[0], u4[0]])
@@ -213,7 +252,7 @@ if __name__ == "__main__":
             plot_h.show()
             plot_payload.show()
             break   
-        if time_sim > 70:
+        if time_sim > 40:
             break
         
         sim.step()  # Step the simulation
@@ -222,7 +261,13 @@ if __name__ == "__main__":
     # 将数据转换为 DataFrame
     current_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     filename = f'./new_data/H_data_sce1_{current_time}.csv'
-    df = pd.DataFrame(data, columns=['time', 'x', 'y', 'z', 'alpha', 'beta', 'gamma', 'u1', 'w1', 'h1', 'u2', 'w2', 'h2', 'u3', 'w3', 'h3', 'u4', 'w4', 'h4'])
+    df = pd.DataFrame(data, columns=['time', 'x', 'y', 'z', 
+                                     'alpha', 'beta', 'gamma', 
+                                     'u1', 'w1', 'h1', 
+                                     'u2', 'w2', 'h2', 
+                                     'u3', 'w3', 'h3', 
+                                     'u4', 'w4', 'h4',
+                                     'ref_x', 'ref_y', 'ref_z', 'ref_theta'])
     if cf == 1:
         df.to_csv('./new_data/H_data_gs_40.csv', index=False)
     else:
